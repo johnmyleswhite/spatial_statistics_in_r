@@ -1,0 +1,1268 @@
+\documentclass{beamer}
+
+\usepackage{beamerthemesplit}
+
+\title{Spatial Statistics in R: An Introduction}
+\author{John Myles White}
+\date{\today}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\section{Introduction}
+
+\frame
+{
+  \frametitle{Caveat Emptor}
+	
+  \begin{itemize}
+		\item<1->{I'm not a statistician: I'm a neuroscientist.}
+		\item<2->{Spatial statistics is an enormous field, and I can only offer a very broad and general survey of its tools.}
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Spatial Statistics: A Definition}
+	
+  \begin{itemize}
+		\item<1->{Tools for understanding data distributed in a space where positions and distance have meaning.}
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Spatial Statistics: Example Applications}
+	Examples freely taken from Yuri Zhukov at Harvard:
+	
+  \begin{itemize}
+		\item<1->{How do we model the spread of a contagious disease?}
+		\item<2->{How do we identify crime hot spots?}
+		\item<3->{How do we predict housing prices?}
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Spatial Statistics: What Tools Exist?}
+	
+  \begin{itemize}
+		\item<1->{Tools for visualizing spatially distributed data intuitively.}
+		\item<2->{Tools for coping with complex coordinate systems.}
+		\item<3->{Tools for performing statistical inference on stochastic processes that emit observations in space.}
+		\item<4->{Tools for coping with data sets where the IID assumption is plainly false.}
+  \end{itemize}
+}
+
+\section{Visualization}
+
+\frame
+{
+	\frametitle{Spatial Data Visualization}
+	
+	From childhood on, we're taught how to read maps. When our data is concerned with counties, states, or nations, maps provide an intuitive way to visualize our data.
+}
+
+\frame
+{
+	\frametitle{A Target Image}
+	
+	\begin{center}
+		\includegraphics[scale = 0.33]{images/spplot_Election_Map.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{What Do We Need to Build Such an Image?}
+	
+	Primitive visual objects that we can combine into larger ensembles:
+	\begin{itemize}
+		\item<1->{Points}
+		\item<2->{Lines}
+		\item<3->{Polygons}
+		\item<4->{Grids}
+	\end{itemize}	
+}
+
+\frame
+{
+	\frametitle{The Meuse Dataset - Our Spatial Data Example}
+
+	To illustrate these primitives, we're going to work with data on the concentration of zinc  around the Meuse river bank. This data comes from the spatial data package `sp'.
+}
+
+\frame
+{
+	\frametitle{The Meuse River}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse.png}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Working with the Meuse Dataset}
+	\begin{verbatim}
+> data(meuse)
+> class(meuse)
+[1] "data.frame"
+> head(meuse, n = 1)
+       x      y cadmium copper lead zinc
+1 181072 333611    11.7     85  299 1022
+
+  elev       dist   om ffreq
+ 7.909 0.00135803 13.6     1
+
+  soil lime landuse dist.m
+1    1    1      Ah     50
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{A Normal R Data Frame}
+	
+	The Meuse dataset starts as a normal R data frame. Calling plot() produces a standard column-by-column scatterplot:
+	
+	\begin{verbatim}
+> plot(meuse)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{R's Standard Column-by-Column Scatterplot}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Scatterplot.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{Creating a SpatialPointsDataFrame}
+	
+	Because the Meuse dataset has `x' and `y' columns, we can convert it into a SpatialPointsDataFrame that allows for easy visualization. A SpatialPointsDataFrame is like a standard data frame with additional information that defines the coordinate system for all of the points in the dataset.
+}
+
+\begin{frame}[fragile]
+	\frametitle{The Conversion Process}
+	
+	\begin{verbatim}
+> coordinates(meuse) <- c('x', 'y')
+> class(meuse)
+[1] "SpatialPointsDataFrame"
+attr(,"package")
+[1] "sp"
+> plot(meuse)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Spatial Point Data Frame Plot}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Point_Plot.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{Locations Alone or Locations with Observed Data?}
+	
+	This sort of plot only provides location information. To add another dimension, we use spplot():
+}
+
+\begin{frame}[fragile]
+	\frametitle{Examining Data at These Spatial Points}
+
+	\begin{verbatim}
+> names(meuse)
+[1] "cadmium" "copper"  "lead"    "zinc"
+[5] "elev"    "dist"   "om"      "ffreq"   "soil"
+[10] "lime"    "landuse" "dist.m"
+
+> spplot(meuse, 'zinc')
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Zinc Distribution in Space}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Zinc_Plot.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Examining Zinc More Carefully}
+
+	It turns out that working on a log scale is better for this example:
+	
+	\begin{verbatim}
+> spplot(meuse, 'zinc', do.log = TRUE)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Log Zinc Distribution in Space}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Log_Zinc_Plot.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Bubbles: An Alternative Visualization Style}
+
+	You can also use bubbles to visualize the same data, which I find clearer:
+	
+	\begin{verbatim}
+> bubble(meuse, 'zinc')
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Zinc Distribution in Space with Bubbles}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Zinc_Bubble_Plot.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{Quick Recap}
+	
+	A standard data frame with 2D spatial coordinates can be converted into a `SpatialPointsDataFrame' easily using the `coordinates' function. Then it can be visualized using tools provided by the `sp' package.
+}
+
+\begin{frame}[fragile]
+	\frametitle{Spatial Lines}
+	
+	Beyond points, we also want to have access to lines and polygons:
+
+	\begin{verbatim}
+	> cc <- coordinates(meuse)
+	> m.sl <- SpatialLines(list(Lines(list(Line(cc)))))
+	> plot(m.sl)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Spatial Line Plot}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Line_Plot.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Polygons are More Interesting than Lines}
+	
+	Making lines out of points is clearly not ideal. Let's move on to some polygons that define the Meuse river's shape itself.
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Polygons are More Interesting than Lines}
+
+	\begin{verbatim}
+> data(meuse.riv)
+> meuse.lst <- list(Polygons(list(Polygon(meuse.riv)),
+			     'meuse.riv'))
+> meuse.sr <- SpatialPolygons(meuse.lst)
+> plot(meuse.sr, col = 'grey')
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Spatial Polygon Plot}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Polygon_Plot.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Grid Plots}
+	
+	Beyond the shape of the river, we might want to know something about the location of water around the river bed. For that, we can use a grid:
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Grid Plots}
+	
+	\begin{verbatim}
+> data(meuse.grid)
+> coordinates(meuse.grid) <- c('x', 'y')
+> meuse.grid <- as(meuse.grid, "SpatialPixels")
+> image(meuse.grid, col = 'grey')
+> title('grid')
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Spatial Grid Plot}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Grid_Plot.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Bringing It all Together}
+	
+	Now, if we pool all of this information, we get a usable visualization of our data set that tells us a lot about the problem we're studying:
+
+	\begin{verbatim}
+> image(meuse.grid, col = 'grey')
+> plot(meuse.sr, col = 'grey', add = TRUE)
+> plot(meuse, add = TRUE)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Spatial Pooled Plot}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Meuse_Pooled_Plot.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{A More Interesting Example}
+
+	Now let's examine spatial polygon data used to display election results from 2004:
+
+	\begin{verbatim}
+> load('Datasets.Rdata')
+
+> class(election)
+[1] "SpatialPolygonsDataFrame"
+attr(,"package")
+[1] "sp"
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Raw Election Data Polygons}
+	
+	We'll start by just plotting this data set.
+	
+	\begin{verbatim}
+> plot(election)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Raw Election Data Polygons}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Election_Data_-_Raw_Polygons.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Colored Election Data Polygons}
+
+	Then we start to add colors reflecting votes:
+	
+	\begin{verbatim}
+> plot(election,
+     	 col = with(as.data.frame(election),
+	 	                ifelse(Bush > Kerry, 'red', 'blue')),
+     	 border = NA)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Colored Election Data Polygons}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Election_Data_-_Binary_Coloring.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Colored Election Data Polygons}
+
+	Then add borders:
+	
+	\begin{verbatim}
+> plot(election,
+     	 col = with(as.data.frame(election),
+	                  ifelse(Bush > Kerry, 'red', 'blue')),
+     	 border = TRUE)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Colored Election Data Polygons}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Election_Data_-_Binary_Coloring_with_Borders.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Colored Election Data Polygons}
+
+	And switch to a continuous scale for Republican percentage votes: 
+	
+	\begin{verbatim}
+> br.palette <- colorRampPalette(c('blue', 'red'),
+                                 space = 'rgb')
+> spplot(election,
+         zcol = 'Bush_pct',
+         col.regions = br.palette(100),
+         main = 'Election Data')
+
+	\end{verbatim}
+\end{frame}
+
+\frame
+{	
+	\frametitle{Colored Election Data Polygons}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Election_Data_-_Continuous_Coloring.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Take Away Message}
+	
+	You can use the data frame I just visualized for any plot of the continental U.S. by simply adding in new columns to the SpatialPolygonsDataFrame.
+\end{frame}
+
+\section{Statistical Models and Inference}
+\begin{frame}[fragile]
+	\frametitle{Statistical Models}
+
+	I want to move away from visualizations and onto statistical methodology. We're going to cover point processes in some depth rather than touch on a lot of topics. Let's just see examples of a point process and then define it formally:
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Point Process 1}
+
+	\begin{center}
+		\includegraphics[scale = 0.4]{images/HPP_with_Intensity_0.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Point Process 2}
+
+	\begin{center}
+		\includegraphics[scale = 0.4]{images/HPP_with_Intensity_20.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Point Process 3}
+
+	\begin{center}
+		\includegraphics[scale = 0.4]{images/HPP_with_Intensity_40.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Point Process 4}
+
+	\begin{center}
+		\includegraphics[scale = 0.4]{images/HPP_with_Intensity_60.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Point Process 5}
+
+	\begin{center}
+		\includegraphics[scale = 0.4]{images/HPP_with_Intensity_80.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Formal Definition}
+
+	A point process is a stochastic process that emits points in an N-dimensional space.
+\end{frame}
+
+\frame
+{
+	\frametitle{Is This Really New?}
+	Couldn't we think of an n-dimensional Gaussian as emitting points in space?
+}
+
+\frame
+{
+	\frametitle{Is This Really New?}
+	Yes, but the Gaussian doesn't have very interesting properties for spatial analyses. Instead of Gaussians and their ilk, we want to understand two things:
+	\begin{itemize}
+		\item<1->{What statistical distributions are relevant to understanding the properties of real data that's distributed in space?}
+		\item<2->{What statistical tests are relevant to inferring which sort of distribution is behind our empirical data?}
+	\end{itemize}
+}
+
+\frame
+{
+	\frametitle{Complete Spatial Randomness}
+
+	The most basic point process we want to understand is one in which points are distributed without rhyme or reason. We call this complete spatial randomness or CSR.
+}
+
+\frame
+{
+	\frametitle{The Homogeneous Poisson Point Process}
+
+	\begin{itemize}
+		\item<1-> Formalization of intuitions about ``random'' spatial distribution.
+		\item<2-> Emits $\lambda$ points over an area $A$ in an N-dimensional space.
+		\item<3-> Coordinates in each of these N dimensions are uniformly distributed and independent of other dimensions.
+	\end{itemize}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Simulating an HPP}
+	
+	Use rpoispp() to draw data from a Poisson point process. You can specify a constant intensity as a number or a variable intensity as a function of the x and y coordinates.
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Simulating an HPP}
+
+	\begin{verbatim}
+> hpp <- rpoispp(3)
+> class(hpp)
+[1] "ppp"
+> hpp$x
+[1] 0.6505647 0.7570645 0.5343773
+> hpp$y
+[1] 0.3068578 0.9638980 0.9664025
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{Simulating an HPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.33]{images/HPP_with_Intensity_80.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{The Inhomogeneous Poisson Process}
+	
+	The inhomogeneous Poisson process is an extension of the HPP where the intensity can vary over space as a function of position.
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Simulating an IPP}
+
+	\begin{verbatim}
+ipp <- rpoispp(function(x,y) {intensity * (x^2 + y^2)})
+plot(ipp)
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{Simulating an IPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.33]{images/IPP_Example.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{The Neyman-Scott Process}
+	
+	From David Diez: A Neyman-Scott process is basically a homogeneous Poisson process with each parent point replaced with k uniformly distributed children points centered around it.
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Simulating an NSPP}
+
+	\begin{verbatim}
+> nspp <- rNeymanScott(kappa = 10,
+                       rmax = 0.1,
+                       function(x,y)
+                       {
+                         runifdisc(5, 0.1,
+                                   centre = c(x, y))
+                       })
+> plot(nspp)
+	\end{verbatim}
+\end{frame}
+
+
+\frame
+{
+	\frametitle{Simulating an NSPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.33]{images/NSPP_Example.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Some Real Spatial Point Process Datasets}
+	\begin{verbatim}
+> data(cells)
+> plot(cells)
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{The Cells Dataset}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Cells_Data.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Some Real Spatial Points Datasets}
+	\begin{verbatim}
+> data(japanesepines)
+> plot(japanesepines)
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{The Japanese Pines Dataset}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Japanese_Pines_Data.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Some Real Spatial Points Datasets}
+	\begin{verbatim}
+> data(redwood)
+> plot(redwood)
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{The Redwood Dataset}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Redwood_Data.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Inference and Hypothesis Testing}
+	
+	We've discussed some data generating processes. How can we test whether these processes could plausibly have generated empirical data? We need novel test statistics.
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Inference and Hypothesis Testing}
+
+	We might ask of our data: what percentage of points have their nearest neighbor at a distance $r$? Under complete spatial randomness, this has a well-defined value, so we can compare empirical results with theoretical expectations as a test statistic.
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{$G(r)$: A Definition}
+	
+	We define $G(r)$ as follows:
+	\begin{itemize}
+		\item<1->{Let $d_i = min_j \{d_{i, j}, \forall j \neq i\}$.}
+		\item<2->{
+			Then 
+			\[
+				\hat{G}(r) = \frac{\#\{d_i : d_i \leq r, \forall i\}}{n}.
+			\]}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{$G(r)$: Theoretical Expected Value}
+
+	Under CSR (i.e. an HPP with intensity $\lambda$), the expected value is:
+	\[
+		G(r) = 1 - e^{-\lambda \pi r^2}
+	\]
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ in R: Gest()}
+	
+	With this in hand, we can compare this theoretical to an empirical estimator and see if there are systematic deviations from the expected values using the function Gest():
+
+	\begin{verbatim}
+> plot(Gest(hpp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on a HPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Gest_HPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on an IPP}
+
+	\begin{verbatim}
+> plot(Gest(ipp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on an IPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Gest_IPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on a NSPP}
+
+	\begin{verbatim}
+> plot(Gest(nspp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on a NSPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Gest_NSPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on the Cells Data}
+
+	\begin{verbatim}
+> plot(Gest(cells))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on the Cells Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Gest_Cells.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on the Japanese Pines Data}
+
+	\begin{verbatim}
+> plot(Gest(japanesepines))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on the Japanese Pines Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Gest_Japanese_Pines.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on the Redwood Data}
+
+	\begin{verbatim}
+> plot(Gest(redwood))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $G(r)$ on the Redwood Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Gest_Redwood.jpg}
+	\end{center}
+\end{frame}
+
+% Fest
+\begin{frame}[fragile]
+	\frametitle{$F(r)$: A Definition}
+	
+	We define $F(r)$ as follows. Given any point, how far away is the nearest emitted point? This is the empty space measure. Under CSR, the expected value is:
+	\[
+		F(r) = 1 - e^{-\lambda \pi r^2}
+	\]
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ in R}
+
+	With this in hand, we can compare this theoretical to an empirical estimator and see if there are systematic deviations from the expected values using Fest():
+
+	\begin{verbatim}
+> plot(Fest(hpp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on an HPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Fest_HPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on an IPP}
+
+	\begin{verbatim}
+> plot(Fest(ipp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on an IPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Fest_IPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on a NSPP}
+
+	\begin{verbatim}
+> plot(Fest(nspp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on a NSPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Fest_NSPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on the Cells Data}
+
+	\begin{verbatim}
+> plot(Fest(cells))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on the Cells Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Fest_Cells.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on the Japanese Pines Data}
+
+	\begin{verbatim}
+> plot(Fest(japanesepines))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on the Japanese Pines Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Fest_Japanese_Pines.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on the Redwood Data}
+
+	\begin{verbatim}
+> plot(Fest(redwood))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $F(r)$ on the Redwood Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Fest_Redwood.jpg}
+	\end{center}
+\end{frame}
+
+% Kest
+\begin{frame}[fragile]
+	\frametitle{$K(r)$: A Definition}
+
+	Here's one more function for hypothesis tests:
+	
+	\begin{itemize}
+		\item<1->{	$N(s) = $ Number of Points within a Distance $s$.}
+		\item<2->{	$K(r) = \lambda^{-1} \mathbb{E} [N(s)]$.}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{$K(r)$: Theoretical Expected Value}
+
+	Under CSR (i.e. an HPP with intensity $\lambda$), the expected value is:
+	\[
+		K(r) = \pi r^2
+	\]
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ in R}
+	
+	With this in hand, we can compare this theoretical to an empirical estimator and see if there are systematic deviations from the expected values using Kest():
+
+	\begin{verbatim}
+> plot(Kest(hpp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on a HPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Kest_HPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on an IPP}
+
+	\begin{verbatim}
+> plot(Kest(ipp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on an IPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Kest_IPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on a NSPP}
+
+	\begin{verbatim}
+> plot(Kest(nspp))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on a NSPP}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Kest_NSPP.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on the Cells Data}
+
+	\begin{verbatim}
+> plot(Kest(cells))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on the Cells Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Kest_Cells.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on the Japanese Pines Data}
+
+	\begin{verbatim}
+> plot(Kest(japanesepines))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on the Japanese Pines Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Kest_Japanese_Pines.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on the Redwood Data}
+
+	\begin{verbatim}
+> plot(Kest(redwood))
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Testing $K(r)$ on the Redwood Data}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Kest_Redwood.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Take Away Message}
+	
+	You can easily run hypothesis tests to assess the plausibility that standard point process models generated your empirical data. You can see if CSR holds or whether other canonical structures (e.g. attraction and repulsion) exist.
+\end{frame}
+
+\section{Statistical Models for Non-IID Data}
+
+\frame
+{
+	\frametitle{Statistical Models for Non-IID Data}
+
+	Finally, there's another topic I can only just touch upon: how do we cope with data whose location is not of interest, but where the points have measurements whose distribution depends upon location?
+}
+
+\frame
+{
+	\frametitle{Statistical Models for Non-IID Data}
+
+	This is fraught with difficulty, because the data set likely fails the IID assumption, and so the true number of observations is smaller than you might think. This will not usually change the maximum likelihood estimators, but will substantially change the variance of our inferences.
+}
+
+\begin{frame}[fragile]
+	\frametitle{Returning to the Meuse Data}
+
+	Let's look at the Meuse data again. We'll see if zinc concentration is predicted by a point's distance from the river bank:
+	
+	\begin{verbatim}
+> xyplot(log(zinc) ~ sqrt(dist),
+         as.data.frame(meuse))
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{Distance Predicts Zinc Concentration}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/XY_Plot_Example.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{Build a Linear Model}
+	
+	\begin{verbatim}
+> zn.lm <- lm(log(zinc) ~ sqrt(dist),
+         data = as.data.frame(meuse))
+> meuse$fitted.s <- predict(zn.lm, meuse)
+         - mean(predict(zn.lm, meuse))
+> meuse$residuals <- residuals(zn.lm)
+> spplot(meuse, c('fitted.s', 'residuals'))
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{Problems with the Linear Model Predictions}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Spatial_Correlation_Example.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{Problems with the Linear Model Predictions}
+
+	Notice the correlated errors for nearby points: the error terms for our model are not correct when they do not take into account the correlations between nearby points.
+}
+
+\frame
+{
+	\frametitle{Variograms: A Definition}
+	
+	We can formalize this concern using variograms. The variogram is a measure of the changes in the variance of our measurement as a function of the distance between points. To create variograms, we define the semivariance function for a given distance $h$:
+	\[
+		\gamma(h) = \frac{1}{2} \mathbb{E}[ (Z(s) - Z(s + h))^2]
+	\]
+}
+
+\frame
+{
+	\frametitle{Variograms}
+	
+	Imagine that our data has no spatial structure: for example, suppose that the value at any point $s$ is $Z(s) = c + \epsilon$, where epsilon is Gaussian noise. Under this assumption, the variance between points is constant and the variogram is a constant corresponding to the variance of $\epsilon$.
+}
+
+\begin{frame}[fragile]
+	\frametitle{Empirical Variograms}
+	
+	We can plot variograms for empirical data to see whether this constant variance across space holds:
+	
+	\begin{verbatim}
+> coordinates(meuse) <- c('x', 'y')
+> plot(variogram(zinc ~ 1, meuse))
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{Empirical Variograms}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Empirical_Variogram.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{Permuted Variogram}
+	
+	By itself, this plot suggests that the variabiity is not constant over space, but we'd like a better sense of how this compares with arbitrary, but similar, data. We can permute the spatial labels for our zinc measurements and then plot a new variogram to do this:
+}
+
+\begin{frame}[fragile]
+	\frametitle{Permuted Variograms}
+	
+	\begin{verbatim}
+> meuse$permuted.zinc <- sample(meuse$zinc, nrow(meuse))
+> plot(variogram(permuted.zinc ~ 1, meuse))
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{Permuted Variogram}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Permuted_Variogram.jpg}
+	\end{center}
+}
+
+
+\frame
+{
+	\frametitle{Permuted Variogram}
+	
+	You can imagine running a large sample of permutations to turn this into a hypothesis test for spatial correlation acting as a hidden variable.
+}
+
+\frame
+{
+	\frametitle{Exploiting Spatial Correlation}
+	
+	Clearly spatial correlation can be a problem. But can we use spatial correlation to improve predictions, rather than weaken inference?
+}
+
+\frame
+{
+	\frametitle{Inverse Distance Weighted Interpolation}
+	
+	A naive method is to perform a sort of k-nearest neighbors in which we up-weight near points and down-weight far points as part of a routine for interpolation concerning unobserved locations.
+}
+
+\frame
+{
+	\frametitle{Inverse Distance Weighted Interpolation}
+	
+	Formally, we use the following interpolation function:
+	\[
+	\hat{Z}(s_0) = \frac{\sum_{i = 1}^{n} w(s_i) Z(s_i)}{\sum_{i = 1}^{n} w(s_i)},
+	\]
+	where
+	\[
+		w(s_i) = ||s_i - s_0||^{-p}
+	\]
+	for some (possibly fitted) $p$.
+}
+
+\begin{frame}[fragile]
+	\frametitle{Inverse Distance Weighted Interpolation in R}
+	
+	\begin{verbatim}
+> meuse.grid <- as(meuse.grid, 'SpatialPixelsDataFrame')
+
+> idw.out <- idw(zinc ~ 1, meuse, meuse.grid, idp = 2.5)
+	\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Refresh Your Memory of The Empirical Data}
+
+	\begin{verbatim}
+> spplot(meuse, z = 'zinc')
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{The Empirical Data}
+	
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Zinc_Refresher.jpg}
+	\end{center}
+}
+
+\begin{frame}[fragile]
+	\frametitle{IDW Predictions}
+
+	\begin{verbatim}
+	spplot(idw.out, z = 'var1.pred')
+	\end{verbatim}
+\end{frame}
+
+\frame
+{
+	\frametitle{IDW Predictions}
+
+	\begin{center}
+		\includegraphics[scale = 0.3]{images/Zinc_IDW_Predictions.jpg}
+	\end{center}
+}
+
+\frame
+{
+	\frametitle{Other Topics}
+	
+	Other items worth looking into:
+	
+	\begin{itemize}
+		\item<1->{Moran's I and Geary's C}
+		\item<2->{Kriging}
+	\end{itemize}
+}
+
+\section{References}
+
+\frame
+{
+	\frametitle{References}
+
+	\begin{itemize}
+		\item<1->{Yuri M. Zhukov: \hyperlink{http://www.people.fas.harvard.edu/~zhukov/spatial.html}{Slides}}
+		\item<2->{David Diez: \hyperlink{http://scc.stat.ucla.edu/page_attachments/0000/0094/spatial_R_1_09S.pdf}{Slides}}
+		\item<3->{Applied Spatial Data Analysis with R: \hyperlink{http://www.asdar-book.org}{Book}}
+	\end{itemize}
+}
+
+\end{document}
